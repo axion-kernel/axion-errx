@@ -1,7 +1,6 @@
 package errx
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"runtime"
@@ -15,7 +14,6 @@ type Error struct {
 	cause        error
 	stacktrace   string
 	privateCause bool
-	metadata     json.RawMessage
 }
 
 // Attr 表示一条结构化错误字段。
@@ -133,17 +131,13 @@ func (e *Error) Attrs() []Attr {
 	if e != nil && e.privateCause {
 		cause = nil
 	}
-	attrs := buildAttrs(buildAttrsArgs{
+	return buildAttrs(buildAttrsArgs{
 		errorType:  e.Type().Name(),
 		errorCode:  e.Code(),
 		message:    e.Message(),
 		cause:      cause,
 		stacktrace: e.Stacktrace(),
 	})
-	if len(e.metadata) != 0 {
-		attrs = append(attrs, Attr{Key: "error_metadata", Value: e.Metadata()})
-	}
-	return attrs
 }
 
 // Unwrap 让 Error 可以接入标准库 errors 链。
