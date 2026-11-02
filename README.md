@@ -213,3 +213,6 @@ func CloseInvoice() error {
 - 门禁：`bash scripts/run_gates.sh`
 
 `Type.WrapPrivate(cause, message, args...)` 保留敏感原因供 errors.Is/As 和显式 Cause 检查，Error、Message、Attrs 不展示其文本。调用方负责提供安全摘要。
+
+
+使用明确的安全诊断并保留真实原因时，调用 `Type.NewWithOptions(errx.Options{Message: safeText, Cause: cause, Metadata: jsonData})`。此入口不追加 cause 文本，公开 Attrs 也不输出其内容；`errors.Is/As` 仍可检查原因。`Metadata()` 返回 JSON 缓冲区副本。可选 `Payload` 只保留进程内原值身份，不自动进入日志或序列化，可变数据由绑定方隔离。原 `New`、`Wrap`、`WrapError` 语义保持不变。

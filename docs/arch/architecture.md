@@ -16,3 +16,10 @@ Axion Kernel 项目群后续所有 Go 项目统一依赖本仓，已有消费方
 - 只放共享错误能力，不放应用层运行时
 - 共享包目录清晰稳定，便于被 `axion-agent` 和 `axion-bridge` 直接引用
 - 脚本和文档规模与仓库复杂度匹配
+
+
+## 显式诊断与可携带元数据
+
+增加 Type.NewWithOptions：使用共享 *errx.Error 保存调用方指定的准确 Message、可选 Cause 和可选 JSON Metadata；不自动把 cause 文本追加到此入口的 Message。原 New/Wrap/WrapError 的行为和 1000–1999 共享类型保持不变。Metadata 在构造和读取时复制，结构化 Attrs 仅在存在 Metadata 时增加该字段。领域不再为保存原协议诊断或原生执行字段实现另一套 error 类型。此库不注册 Agent 私有码，不解释 Metadata 的产品内容。
+
+Options 的 Payload 仅保留进程内原值身份，不写入 Attrs；通用库不解释该值，也不承诺深复制任意对象。调用方为协议 DTO 提供独立所有权，真正任意拒绝值可以有意保留对象 identity。
