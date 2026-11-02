@@ -1,10 +1,12 @@
 # errx
 
+Axion Kernel 项目群统一使用的公共错误库；后续所有 Go 项目使用本仓 module，保留原 `axion-box/axion-errx` 的提交历史与实现。
+
 `errx` 是 `axion` 系列项目通用的结构化错误包，用来统一表达稳定错误码、错误类型、错误消息、原因链和创建时堆栈。
 
 对外共享包路径：
 
-- `github.com/axion-box/axion-errx/pkgs/errx`
+- `github.com/axion-kernel/axion-errx/pkgs/errx`
 
 ## 基本用法
 
@@ -19,7 +21,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/axion-box/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkgs/errx"
 )
 
 func main() {
@@ -49,7 +51,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/axion-box/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkgs/errx"
 )
 
 func main() {
@@ -94,7 +96,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/axion-box/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkgs/errx"
 )
 
 func main() {
@@ -163,7 +165,7 @@ func main() {
 ```go
 package billing
 
-import "github.com/axion-box/axion-errx/pkgs/errx"
+import "github.com/axion-kernel/axion-errx/pkgs/errx"
 
 var InvoiceClosed = errx.NewType("invoice_closed", 2100)
 ```

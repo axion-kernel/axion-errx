@@ -3,7 +3,7 @@ package errx_test
 import (
 	"testing"
 
-	"github.com/axion-box/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkgs/errx"
 )
 
 func TestNewTypeCarriesNameAndCode(t *testing.T) {

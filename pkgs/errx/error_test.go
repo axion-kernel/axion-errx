@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/axion-box/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkgs/errx"
 )
 
 func TestNewErrorCarriesTypeMessageCodeAndStacktrace(t *testing.T) {

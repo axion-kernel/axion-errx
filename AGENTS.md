@@ -16,6 +16,7 @@
 ## AI 易错勘误
 
 - 这是一个共享基础库仓库，不是应用仓库；不要引入与 HTTP 运行时、数据库、前端调试器等无关的骨架。
+- 项目群统一 module 为 `github.com/axion-kernel/axion-errx`；不要重新引入旧 module 或改动已发布错误身份。
 - 对外共享 Go 包固定放在 `pkgs/errx`；不要擅自改成 `pkg/errx` 或 `internal/errx`。
 - `NewType` 统一使用参数形式 `NewType("name", code)`，不要回退到结构体参数形式。
 - 共享错误码 `1000~1999` 需要保持跨仓库稳定，新增通用错误时先检查是否与现有定义重复。
