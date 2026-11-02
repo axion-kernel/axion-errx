@@ -211,3 +211,5 @@ func CloseInvoice() error {
 
 - 单元测试：`bash scripts/run_unit_tests.sh`
 - 门禁：`bash scripts/run_gates.sh`
+
+`Type.WrapPrivate(cause, message, args...)` 保留敏感原因供 errors.Is/As 和显式 Cause 检查，Error、Message、Attrs 不展示其文本。调用方负责提供安全摘要。

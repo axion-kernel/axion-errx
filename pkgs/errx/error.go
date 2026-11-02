@@ -1,6 +1,7 @@
 package errx
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"runtime"
@@ -9,10 +10,12 @@ import (
 
 // Error 是带类型码、原因链和堆栈的结构化业务错误。
 type Error struct {
-	typ        *Type
-	message    string
-	cause      error
-	stacktrace string
+	typ          *Type
+	message      string
+	cause        error
+	stacktrace   string
+	privateCause bool
+	metadata     json.RawMessage
 }
 
 // Attr 表示一条结构化错误字段。
@@ -48,6 +51,17 @@ func (t *Type) Wrap(err error, message string, args ...any) *Error {
 		cause:      err,
 		stacktrace: captureStacktrace(),
 	}
+}
+
+// WrapPrivate preserves a sensitive cause for errors.Is/As without rendering it.
+// Unlike Wrap, neither Message, Error nor Attrs includes the cause's text.
+// Callers must provide a safe message; explicitly inspecting Cause still exposes the original error.
+func (t *Type) WrapPrivate(err error, message string, args ...any) *Error {
+	if err == nil {
+		return nil
+	}
+	return &Error{typ: t, message: formatMessage(message, args...), cause: err,
+		stacktrace: captureStacktrace(), privateCause: true}
 }
 
 // WrapError 按统一规则包装一个已有错误。
@@ -115,13 +129,21 @@ func (e *Error) Stacktrace() string {
 
 // Attrs 返回当前错误对象对应的结构化字段集合。
 func (e *Error) Attrs() []Attr {
-	return buildAttrs(buildAttrsArgs{
+	cause := e.Cause()
+	if e != nil && e.privateCause {
+		cause = nil
+	}
+	attrs := buildAttrs(buildAttrsArgs{
 		errorType:  e.Type().Name(),
 		errorCode:  e.Code(),
 		message:    e.Message(),
-		cause:      e.Cause(),
+		cause:      cause,
 		stacktrace: e.Stacktrace(),
 	})
+	if len(e.metadata) != 0 {
+		attrs = append(attrs, Attr{Key: "error_metadata", Value: e.Metadata()})
+	}
+	return attrs
 }
 
 // Unwrap 让 Error 可以接入标准库 errors 链。
