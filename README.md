@@ -216,3 +216,8 @@ func CloseInvoice() error {
 
 
 使用明确的安全诊断并保留真实原因时，调用 `Type.NewWithOptions(errx.Options{Message: safeText, Cause: cause, Metadata: jsonData})`。此入口不追加 cause 文本，公开 Attrs 也不输出其内容；`errors.Is/As` 仍可检查原因。`Metadata()` 返回 JSON 缓冲区副本。可选 `Payload` 只保留进程内原值身份，不自动进入日志或序列化，可变数据由绑定方隔离。原 `New`、`Wrap`、`WrapError` 语义保持不变。
+
+## CI Runner
+
+CI 统一使用组织 self-hosted runner `ccf-linux-01-kernel-docker`（Linux x64，runner group `Default`）。
+`runs-on: [self-hosted, Linux, X64, axion-kernel, image-builder, ccf, amd64]`；配置、环境要求与排队排查见 [项目群 CI Runner 合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/development/ci-runner.md)。
