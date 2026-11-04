@@ -18,6 +18,16 @@ type Options struct {
 }
 
 // NewWithOptions 创建共享错误，独立捕获准确消息、私有原因、堆栈及元数据。
+//
+// 要做什么：
+// - 使用显式选项构造错误，将公开诊断文本与私有原因链分开保存。
+//
+// 具体怎么做：
+// - 保存当前类型、消息和原始原因，并在构造位置捕获调用栈。
+// - 复制元数据字节，保留载荷原值，并标记原因不参与公开诊断渲染。
+//
+// 输出什么：
+// - 返回新错误；其元数据与调用方缓冲区隔离，载荷仍保留原值身份。
 func (t *Type) NewWithOptions(options Options) *Error {
 	return &Error{
 		typ:          t,
@@ -31,6 +41,15 @@ func (t *Type) NewWithOptions(options Options) *Error {
 }
 
 // Payload 返回调用方明确绑定的进程内值，不渲染、不复制、不跨协议传输。
+//
+// 要做什么：
+// - 获取构造错误时附带的进程内载荷。
+//
+// 具体怎么做：
+// - 空接收者直接返回 nil，否则原样返回保存的载荷，不复制其中的可变数据。
+//
+// 输出什么：
+// - 返回载荷原值；空接收者或未设置载荷时返回 nil。
 func (e *Error) Payload() any {
 	if e == nil {
 		return nil
@@ -39,6 +58,15 @@ func (e *Error) Payload() any {
 }
 
 // Metadata 返回调用方协议元数据的独立副本；没有元数据时返回 nil。
+//
+// 要做什么：
+// - 读取错误的协议元数据，避免调用方修改错误内部保存的字节。
+//
+// 具体怎么做：
+// - 空接收者返回 nil，否则将保存的元数据复制到独立字节切片。
+//
+// 输出什么：
+// - 返回可由调用方独立修改的 JSON 字节副本；没有数据时返回 nil。
 func (e *Error) Metadata() json.RawMessage {
 	if e == nil {
 		return nil

@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from check_doc_comments import find_violations
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 SKIP_DIR_NAMES = {
     ".cache",
@@ -238,6 +240,22 @@ def run_go_test_gate() -> None:
     print("[go-test-gate] 通过: go test ./... 成功")
 
 
+def run_doc_comment_gate() -> None:
+    try:
+        violations = find_violations()
+    except RuntimeError as err:
+        raise GateError(str(err)) from err
+    if violations:
+        raise GateError("中文文档注释门禁失败:\n" + "\n".join(violations))
+    print("[doc-comment-gate] 通过: 中文文档注释与段间空行符合约束")
+
+
+def run_script_tests_gate() -> None:
+    proc = run_cmd([sys.executable, "-m", "unittest", "discover", "-s", "scripts/agents", "-p", "*_test.py"])
+    print(proc.stdout, end="")
+    print("[script-tests-gate] 通过: 注释门禁回归成功")
+
+
 def main(argv: list[str] | None = None) -> int:
     _ = argv
     try:
@@ -246,6 +264,8 @@ def main(argv: list[str] | None = None) -> int:
         run_package_root_gate()
         run_subpackage_gate()
         run_go_format_gate()
+        run_doc_comment_gate()
+        run_script_tests_gate()
         run_go_test_gate()
     except GateError as err:
         print(f"[all-gates] {err}", file=sys.stderr)
