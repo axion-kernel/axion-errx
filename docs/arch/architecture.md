@@ -23,3 +23,9 @@ Axion Kernel 项目群后续所有 Go 项目统一依赖本仓，已有消费方
 增加 Type.NewWithOptions：使用共享 *errx.Error 保存调用方指定的准确 Message、可选 Cause 和可选 JSON Metadata；不自动把 cause 文本追加到此入口的 Message。原 New/Wrap/WrapError 的行为和 1000–1999 共享类型保持不变。Metadata 在构造和读取时复制，结构化 Attrs 仅在存在 Metadata 时增加该字段。领域不再为保存原协议诊断或原生执行字段实现另一套 error 类型。此库不注册 Agent 私有码，不解释 Metadata 的产品内容。
 
 Options 的 Payload 仅保留进程内原值身份，不写入 Attrs；通用库不解释该值，也不承诺深复制任意对象。调用方为协议 DTO 提供独立所有权，真正任意拒绝值可以有意保留对象 identity。
+
+## 原因树查询
+
+Find 按标准 Unwrap 的单原因或多原因树深度优先查找，先访问当前节点，再按分支声明顺序访问子节点。
+调用方只提供当前节点匹配条件，协议码与载荷含义仍由其 owner 解释。查询跳过空值和类型化空值，
+最多访问 4096 个节点；不渲染错误文本，也不复制错误。领域库复用此入口，不再维护递归查码器。
