@@ -6,7 +6,7 @@ Axion Kernel 项目群统一使用的公共错误库；后续所有 Go 项目使
 
 对外共享包路径：
 
-- `github.com/axion-kernel/axion-errx/pkgs/errx`
+- `github.com/axion-kernel/axion-errx/pkg/errx`
 
 ## 基本用法
 
@@ -21,7 +21,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/axion-kernel/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkg/errx"
 )
 
 func main() {
@@ -51,7 +51,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/axion-kernel/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkg/errx"
 )
 
 func main() {
@@ -96,7 +96,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/axion-kernel/axion-errx/pkgs/errx"
+	"github.com/axion-kernel/axion-errx/pkg/errx"
 )
 
 func main() {
@@ -165,7 +165,7 @@ func main() {
 ```go
 package billing
 
-import "github.com/axion-kernel/axion-errx/pkgs/errx"
+import "github.com/axion-kernel/axion-errx/pkg/errx"
 
 var InvoiceClosed = errx.NewType("invoice_closed", 2100)
 ```
