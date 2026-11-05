@@ -10,7 +10,18 @@ CHINESE_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\U00020000-\U000323af]")
 
 
 def validate_doc_comment(block: Sequence[str]) -> list[str]:
-    """保留注释中的空行，拒绝只有关键词而没有完整段落的文档。"""
+    """validate_doc_comment 校验函数文档的中文段落结构。
+
+    要做什么：
+    - 要求中文摘要、固定顺序的三节标题和各节中文列表。
+
+    具体怎么做：
+    - 保留行注释中的空行，检查说明语言及占位空行文本。
+    - 检查标题缺失、重复和乱序，再核对标题前空行与列表内容。
+
+    输出什么：
+    - 返回按检测顺序收集的问题；缺少标题或顺序错误时不继续检查列表。
+    """
     if not block:
         return ["缺少文档注释"]
     problems: list[str] = []

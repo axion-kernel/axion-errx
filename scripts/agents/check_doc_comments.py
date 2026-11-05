@@ -13,7 +13,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def changed_lines(root: Path, relative: str) -> set[int] | None:
+    """changed_lines 计算相对 HEAD 的新增或删除邻接行。
+
+    要做什么：
+    - 让注释校验覆盖代码变更及仅修改注释的差异。
+
+    具体怎么做：
+    - 无 HEAD 或未跟踪文件返回全量标记，否则解析零上下文差异。
+    - 删除没有新增行时保留删除位置两侧，防止删除空注释行绕过校验。
+
+    输出什么：
+    - 返回一基行号集合或全量标记；差异命令失败抛出运行错误。
+    """
     def git(*args):
+        """git 在指定测试或项目根查询版本信息。
+
+        要做什么：
+        - 为变更范围判定提供统一 Git 调用。
+
+        具体怎么做：
+        - 传入分立参数，以 UTF-8 捕获输出，不自动检查返回码。
+
+        输出什么：
+        - 返回进程结果，状态由外层调用者判断。
+        """
         return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, encoding="utf-8", check=False)
 
     if git("rev-parse", "--verify", "HEAD").returncode:
@@ -32,6 +55,18 @@ def changed_lines(root: Path, relative: str) -> set[int] | None:
 
 
 def validate_short_comment(block: list[str]) -> list[str]:
+    """validate_short_comment 校验类型和字段等简短说明。
+
+    要做什么：
+    - 要求中文行注释，并在可识别的新标题段落前留空行。
+
+    具体怎么做：
+    - 保留原注释行用于前缀校验，检查非空说明是否含中文及空行占位文本。
+    - 遇到非列表且以全角冒号结尾的标题，检查前一行是否为空。
+
+    输出什么：
+    - 返回问题列表；本函数不要求函数文档的固定三节。
+    """
     if not block:
         return ["缺少文档注释"]
     lines = [raw.removeprefix("//").strip() for raw in block]
@@ -49,6 +84,18 @@ def validate_short_comment(block: list[str]) -> list[str]:
 
 
 def find_violations(root: Path = ROOT) -> list[str]:
+    """find_violations 将 AST 文档条目与变更行组合校验。
+
+    要做什么：
+    - 对受检根内的函数、方法及其他文档说明生成定位诊断。
+
+    具体怎么做：
+    - 在工具所属仓运行 Go 提取器，解析条目并按路径缓存变更行。
+    - 跳过未触及当前差异的条目，分别调用完整或简短文档校验。
+
+    输出什么：
+    - 返回带路径、行号和名称的违规列表；提取失败抛出运行错误。
+    """
     result = subprocess.run(["go", "run", "./scripts/agents/cmd/doc_comments", "--root", str(root)],
                             cwd=ROOT, capture_output=True, text=True, encoding="utf-8", check=False)
     if result.returncode:
