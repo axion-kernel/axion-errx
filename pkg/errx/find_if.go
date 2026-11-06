@@ -19,6 +19,8 @@ func FindIf(source error, match func(error) bool) error {
 		return nil
 	}
 	pending := []error{source}
+
+	// 用有界栈按原因声明顺序深度优先访问，空值和类型化空值不交给匹配器。
 	for visited := 0; len(pending) > 0 && visited < 4096; visited++ {
 		last := len(pending) - 1
 		current := pending[last]
@@ -36,8 +38,22 @@ func FindIf(source error, match func(error) bool) error {
 		if match(current) {
 			return current
 		}
+
+		// 多原因按逆序压栈以保留声明顺序，单原因直接压栈等待下一次访问。
 		switch cause := current.(type) {
-		case interface{ Unwrap() []error }:
+		case interface {
+			// Unwrap 提供当前错误的多个直接原因。
+			//
+			// 要做什么：
+			// - 为原因树遍历暴露按声明顺序排列的子错误。
+			//
+			// 具体怎么做：
+			// - 由错误实现返回子错误切片，查询方按剩余访问额度截取并压栈。
+			//
+			// 输出什么：
+			// - 返回直接原因列表，空列表表示没有可继续遍历的原因。
+			Unwrap() []error
+		}:
 			children := cause.Unwrap()
 			remaining := 4096 - visited - 1 - len(pending)
 			if len(children) > remaining {
@@ -46,7 +62,19 @@ func FindIf(source error, match func(error) bool) error {
 			for index := len(children) - 1; index >= 0; index-- {
 				pending = append(pending, children[index])
 			}
-		case interface{ Unwrap() error }:
+		case interface {
+			// Unwrap 提供当前错误的单个直接原因。
+			//
+			// 要做什么：
+			// - 让遍历继续进入单原因错误链。
+			//
+			// 具体怎么做：
+			// - 由错误实现返回其包装的原因，查询方将该原因压栈。
+			//
+			// 输出什么：
+			// - 返回直接原因，nil 表示没有下一层原因。
+			Unwrap() error
+		}:
 			pending = append(pending, cause.Unwrap())
 		}
 	}

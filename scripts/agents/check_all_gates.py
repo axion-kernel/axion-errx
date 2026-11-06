@@ -354,6 +354,8 @@ def run_go_format_gate() -> None:
         raise GateError("以下 Go 文件尚未 gofmt:\n" + "\n".join(f"- {item}" for item in unformatted))
 
     print("[go-format-gate] 通过: 所有 Go 文件已格式化")
+    proc = run_cmd(["go", "run", "./scripts/agents/cmd/go_decl_layout"])
+    print(proc.stdout, end="")
 
 
 def run_go_test_gate() -> None:

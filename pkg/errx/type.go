@@ -5,6 +5,17 @@ import (
 	"sync"
 )
 
+var (
+	// registryMu 串行化对关联包级状态的访问。
+	registryMu sync.Mutex
+
+	// registeredIDs 保存当前实现使用的条目。
+	registeredIDs = map[int]string{}
+
+	// registered 保存当前实现使用的条目。
+	registered = map[string]int{}
+)
+
 // Type 表示一类稳定可判别的共享业务错误。
 type Type struct {
 	// name 保存注册时指定的错误类型名称。
@@ -13,12 +24,6 @@ type Type struct {
 	// code 保存与名称一一对应的正整数错误码。
 	code int
 }
-
-var (
-	registryMu    sync.Mutex
-	registeredIDs = map[int]string{}
-	registered    = map[string]int{}
-)
 
 // NewType 注册一个新的错误类型，并校验 name/code 在进程内唯一。
 //
