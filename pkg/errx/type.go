@@ -23,6 +23,9 @@ type Type struct {
 
 	// code 保存与名称一一对应的正整数错误码。
 	code int
+
+	// httpStatus 保存所属仓声明的 HTTP 失败状态。
+	httpStatus int
 }
 
 // NewType 注册一个新的错误类型，并校验 name/code 在进程内唯一。
@@ -33,15 +36,24 @@ type Type struct {
 // 具体怎么做：
 // - 拒绝空名称和非正数编码，再持有注册锁检查两个索引是否已有对应项。
 // - 检查通过后同时登记名称和编码；非法参数或重复注册均触发 panic。
+// - 可选状态必须为单个 400–599 整数，未传入时默认 500。
 //
 // 输出什么：
 // - 返回保存该名称与编码的错误类型对象。
-func NewType(name string, code int) *Type {
+func NewType(name string, code int, httpStatus ...int) *Type {
 	if name == "" {
 		panic("errx: type name is required")
 	}
 	if code <= 0 {
 		panic("errx: type code must be > 0")
+	}
+	status := 500
+	if len(httpStatus) > 1 {
+		panic("errx: at most one HTTP status is allowed")
+	}
+	if len(httpStatus) == 1 {
+		status = httpStatus[0]
+		validateHttpStatus(status)
 	}
 
 	registryMu.Lock()
@@ -56,7 +68,7 @@ func NewType(name string, code int) *Type {
 
 	registeredIDs[code] = name
 	registered[name] = code
-	return &Type{name: name, code: code}
+	return &Type{name: name, code: code, httpStatus: status}
 }
 
 // Name 返回错误类型注册时声明的稳定名称。

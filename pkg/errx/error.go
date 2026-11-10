@@ -30,6 +30,9 @@ type Error struct {
 
 	// payload 保存进程内载荷原值，不参与公开字段投影。
 	payload any
+
+	// httpStatus 保存实例显式指定或透明包装保留的 HTTP 状态。
+	httpStatus int
 }
 
 // Attr 表示一条结构化错误字段。
@@ -124,9 +127,13 @@ func WrapError(err error, message string, args ...any) *Error {
 
 	formatted := formatMessage(message, args...)
 	if ex := Cast(err); ex != nil {
-		return ex.Type().Wrap(err, "%s", formatted)
+		wrapped := ex.Type().Wrap(err, "%s", formatted)
+		wrapped.httpStatus = HttpStatus(err)
+		return wrapped
 	}
-	return ExternalError.Wrap(err, "%s", formatted)
+	wrapped := ExternalError.Wrap(err, "%s", formatted)
+	wrapped.httpStatus = HttpStatus(err)
+	return wrapped
 }
 
 // Error 返回错误的用户可读消息。

@@ -15,6 +15,9 @@ type Options struct {
 
 	// Payload 保存进程内原值身份，不自动序列化；其可变数据由调用方负责隔离。
 	Payload any
+
+	// HttpStatus 为当前实例声明 HTTP 失败状态，零值沿用错误类型的状态。
+	HttpStatus int
 }
 
 // NewWithOptions 创建共享错误，独立捕获准确消息、私有原因、堆栈及元数据。
@@ -29,6 +32,9 @@ type Options struct {
 // 输出什么：
 // - 返回新错误；其元数据与调用方缓冲区隔离，载荷仍保留原值身份。
 func (t *Type) NewWithOptions(options Options) *Error {
+	if options.HttpStatus != 0 {
+		validateHttpStatus(options.HttpStatus)
+	}
 	return &Error{
 		typ:          t,
 		message:      options.Message,
@@ -37,6 +43,7 @@ func (t *Type) NewWithOptions(options Options) *Error {
 		privateCause: true,
 		metadata:     append(json.RawMessage(nil), options.Metadata...),
 		payload:      options.Payload,
+		httpStatus:   options.HttpStatus,
 	}
 }
 

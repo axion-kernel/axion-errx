@@ -29,3 +29,9 @@ Options 的 Payload 仅保留进程内原值身份，不写入 Attrs；通用库
 FindIf 按标准 Unwrap 的单原因或多原因树深度优先查找，先访问当前节点，再按分支声明顺序访问子节点。
 调用方只提供当前节点匹配条件，协议码与载荷含义仍由其 owner 解释。查询跳过空值和类型化空值，
 最多访问 4096 个节点；不渲染错误文本，也不复制错误。领域库复用此入口，不再维护递归查码器。
+
+## 错误自带 HTTP 状态
+
+`NewType(name, code, status)` 在注册错误身份时声明 400–599 的 HTTP 状态，原两参数调用默认 500。`Type.HttpStatus()` 与 `Error.HttpStatus()` 读取该状态；`Options.HttpStatus` 可显式覆盖当前实例。`errx.HttpStatus(err)` 通过统一的有界原因树查询支持普通包装、联合错误和实现同名方法的远端错误，缺失状态默认 500，标准取消和超时为 408。最外层有效声明优先；`WrapError` 保留状态，显式 `Type.Wrap/WrapPrivate` 重新分类并采用外层类型的状态。
+
+共享错误在本仓声明状态，领域类型在 owner 仓声明，HTTP 宿主不再按 code 维护 switch。状态不新增到 Attrs、元数据或响应正文。HTTP handler、安全消息和序列化仍归各边界。

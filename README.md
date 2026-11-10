@@ -221,3 +221,9 @@ func CloseInvoice() error {
 
 CI 统一使用组织 self-hosted runner `ccf-linux-01-kernel-docker`（Linux x64，runner group `Default`）。
 `runs-on: [self-hosted, Linux, X64, axion-kernel, image-builder, ccf, amd64]`；配置、环境要求与排队排查见 [项目群 CI Runner 合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/development/ci-runner.md)。
+
+## 错误自带 HTTP 状态
+
+`NewType(name, code, status)` 在注册错误身份时声明 400–599 的 HTTP 状态，原两参数调用默认 500。`Type.HttpStatus()` 与 `Error.HttpStatus()` 读取该状态；`Options.HttpStatus` 可显式覆盖当前实例。`errx.HttpStatus(err)` 通过统一的有界原因树查询支持普通包装、联合错误和实现同名方法的远端错误，缺失状态默认 500，标准取消和超时为 408。最外层有效声明优先；`WrapError` 保留状态，显式 `Type.Wrap/WrapPrivate` 重新分类并采用外层类型的状态。
+
+共享错误在本仓声明状态，领域类型在 owner 仓声明，HTTP 宿主不再按 code 维护 switch。状态不新增到 Attrs、元数据或响应正文。HTTP handler、安全消息和序列化仍归各边界。
