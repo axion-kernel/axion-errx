@@ -39,3 +39,5 @@ FindIf 按标准 Unwrap 的单原因或多原因树深度优先查找，先访�
 ## HTTP 错误投影门禁
 
 公开工程命令 `go run github.com/axion-kernel/axion-errx/cmd/errx-httpcheck -root .` 使用 Go AST 检查本仓生产源码。它禁止错误分类驱动的 HTTP 状态 switch、if、映射表和辅助查表函数，拒绝旧四参数 httpx.WriteError 和 HTTP status 冒充业务 code。统一 Errx 状态读取及错误 owner 的 HttpStatus 方法允许；标准框架直接写固定状态和业务安全消息选择允许。各仓统一门禁消费同一发布版检查器，无相邻源码依赖。
+
+`errx-httpcheck` 同样检查 `http.NotFound` 的隐含 404：错误分支不能用该调用重新选择状态；独立路由拒绝仍允许调用。静态文件可直接委托标准文件服务，普通读取失败通过 Errx helper 返回 500。新增正反 AST 用例及完整门禁、CLI race 回归已通过（2026-11-10）。

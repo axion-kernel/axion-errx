@@ -29,6 +29,8 @@ func TestHTTPErrorContractRejectsMappingsAndAllowsFrameworkStatus(t *testing.T) 
 		{"classification switch", `func serve(w Writer, err error) { status := 500; switch { case errx.IsOfType(err, errx.NotFound): status = 404 }; w.WriteHeader(status) }`, true},
 		{"if mapping", `func serve(w Writer, problem error) { if errx.IsOfType(problem, errx.Forbidden) { w.WriteHeader(403) } }`, true},
 		{"nil error fixed status", `func serve(w Writer, err error) { if err != nil { http.Error(w,"failed",400) } }`, true},
+		{"nil error not found", `func serve(w Writer, err error) { if err != nil { http.NotFound(w,r) } }`, true},
+		{"direct framework not found", `func serve(w Writer) { if path == "missing" { http.NotFound(w,r) } }`, false},
 		{"nil error carried status", `func serve(w Writer, err error) { if err != nil { status := errx.HttpStatus(err); w.WriteHeader(status) } }`, false},
 		{"method fixed status", `func serve(w Writer, err error) { if err != nil { app.writeError(w,400,err) } }`, true},
 		{"method carried status", `func serve(w Writer, err error) { if err != nil { app.writeJSON(w,errx.HttpStatus(err),value) } }`, false},

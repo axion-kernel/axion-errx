@@ -293,6 +293,9 @@ func statusArgument(call *ast.CallExpr) ast.Expr {
 			return call.Args[0]
 		}
 		if owner, ok := selector.X.(*ast.Ident); ok && owner.Name == "http" {
+			if selector.Sel.Name == "NotFound" && len(call.Args) == 2 {
+				return &ast.BasicLit{Kind: token.INT, Value: "404"}
+			}
 			if selector.Sel.Name == "Error" && len(call.Args) == 3 {
 				return call.Args[2]
 			}
