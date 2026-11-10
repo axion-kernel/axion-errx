@@ -35,3 +35,7 @@ FindIf 按标准 Unwrap 的单原因或多原因树深度优先查找，先访�
 `NewType(name, code, status)` 在注册错误身份时声明 400–599 的 HTTP 状态，原两参数调用默认 500。`Type.HttpStatus()` 与 `Error.HttpStatus()` 读取该状态；`Options.HttpStatus` 可显式覆盖当前实例。`errx.HttpStatus(err)` 通过统一的有界原因树查询支持标准包装和联合错误，未找到 Errx 实例时统一 500，不采信普通错误的同名方法。最外层有效声明优先；`WrapError` 保留状态，显式 `Type.Wrap/WrapPrivate` 重新分类并采用外层类型的状态。
 
 共享错误在本仓声明状态，领域类型在 owner 仓声明，HTTP 宿主不再按 code 维护 switch。状态不新增到 Attrs、元数据或响应正文。HTTP handler、安全消息和序列化仍归各边界。
+
+## HTTP 错误投影门禁
+
+公开工程命令 `go run github.com/axion-kernel/axion-errx/cmd/errx-httpcheck -root .` 使用 Go AST 检查本仓生产源码。它禁止错误分类驱动的 HTTP 状态 switch、if、映射表和辅助查表函数，拒绝旧四参数 httpx.WriteError 和 HTTP status 冒充业务 code。统一 Errx 状态读取及错误 owner 的 HttpStatus 方法允许；标准框架直接写固定状态和业务安全消息选择允许。各仓统一门禁消费同一发布版检查器，无相邻源码依赖。

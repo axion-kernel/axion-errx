@@ -436,6 +436,7 @@ def main(argv: list[str] | None = None) -> int:
         run_package_root_gate()
         run_subpackage_gate()
         run_go_format_gate()
+        print(run_cmd(["go", "run", "./cmd/errx-httpcheck", "-root", "."]).stdout, end="")
         run_doc_comment_gate()
         run_script_tests_gate()
         run_go_test_gate()
