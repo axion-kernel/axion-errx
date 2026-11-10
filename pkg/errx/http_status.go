@@ -1,7 +1,5 @@
 package errx
 
-import "context"
-
 // HttpStatus 返回错误类型声明的 HTTP 失败状态。
 //
 // 要做什么：
@@ -45,27 +43,20 @@ func (e *Error) HttpStatus() int {
 // - 为传输边界统一读取错误状态，支持标准包装与多原因错误。
 //
 // 具体怎么做：
-// - 复用有界原因树查询，采用第一个有效的状态声明；显式外层声明优先。
-// - 将标准取消与超时视为 408；空值、普通错误和无效状态回退 500。
+// - 复用有界原因树查询，读取第一个 Errx 实例；显式外层声明优先。
+// - 空值和不含 Errx 的普通错误回退 500，不采信其他错误的同名方法。
 //
 // 输出什么：
 // - 返回 400–599 范围内的状态，不读取消息、错误码或诊断载荷。
 func HttpStatus(err error) int {
-	status := 500
-	FindIf(err, func(current error) bool {
-		if provider, ok := current.(httpStatusProvider); ok {
-			if value := provider.HttpStatus(); value >= 400 && value <= 599 {
-				status = value
-				return true
-			}
-		}
-		if current == context.Canceled || current == context.DeadlineExceeded {
-			status = 408
-			return true
-		}
-		return false
+	found := FindIf(err, func(current error) bool {
+		_, ok := current.(*Error)
+		return ok
 	})
-	return status
+	if found == nil {
+		return 500
+	}
+	return found.(*Error).HttpStatus()
 }
 
 // validateHttpStatus 拒绝非法的 HTTP 失败状态。

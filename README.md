@@ -224,6 +224,6 @@ CI 统一使用组织 self-hosted runner `ccf-linux-01-kernel-docker`（Linux x6
 
 ## 错误自带 HTTP 状态
 
-`NewType(name, code, status)` 在注册错误身份时声明 400–599 的 HTTP 状态，原两参数调用默认 500。`Type.HttpStatus()` 与 `Error.HttpStatus()` 读取该状态；`Options.HttpStatus` 可显式覆盖当前实例。`errx.HttpStatus(err)` 通过统一的有界原因树查询支持普通包装、联合错误和实现同名方法的远端错误，缺失状态默认 500，标准取消和超时为 408。最外层有效声明优先；`WrapError` 保留状态，显式 `Type.Wrap/WrapPrivate` 重新分类并采用外层类型的状态。
+`NewType(name, code, status)` 在注册错误身份时声明 400–599 的 HTTP 状态，原两参数调用默认 500。`Type.HttpStatus()` 与 `Error.HttpStatus()` 读取该状态；`Options.HttpStatus` 可显式覆盖当前实例。`errx.HttpStatus(err)` 通过统一的有界原因树查询支持标准包装和联合错误，未找到 Errx 实例时统一 500，不采信普通错误的同名方法。最外层有效声明优先；`WrapError` 保留状态，显式 `Type.Wrap/WrapPrivate` 重新分类并采用外层类型的状态。
 
 共享错误在本仓声明状态，领域类型在 owner 仓声明，HTTP 宿主不再按 code 维护 switch。状态不新增到 Attrs、元数据或响应正文。HTTP handler、安全消息和序列化仍归各边界。
