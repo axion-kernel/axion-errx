@@ -18,6 +18,7 @@ type checker struct {
 	file       string
 	errors     map[string]bool
 	statuses   map[string]bool
+	carried    map[string]bool
 	violations []string
 }
 
@@ -93,11 +94,26 @@ func checkFile(fset *token.FileSet, path string, file *ast.File) []string {
 				violations = append(violations, fmt.Sprintf("%s:%d: HTTP WriteError 不得声明宿主 status 参数", path, fset.Position(fn.Pos()).Line))
 			}
 		}
+		writer, failure, status := false, false, false
+		for _, field := range fn.Type.Params.List {
+			if selector, ok := field.Type.(*ast.SelectorExpr); ok && selector.Sel.Name == "ResponseWriter" {
+				writer = true
+			}
+			if id, ok := field.Type.(*ast.Ident); ok {
+				failure = failure || id.Name == "error"
+				for _, name := range field.Names {
+					status = status || id.Name == "int" && strings.Contains(strings.ToLower(name.Name), "status")
+				}
+			}
+		}
+		if writer && failure && status {
+			violations = append(violations, fmt.Sprintf("%s:%d: 错误响应封装不得同时接收 error 和 status", path, fset.Position(fn.Pos()).Line))
+		}
 		// 状态的真实 owner 是 Errx 查询和各错误本体的 HttpStatus 方法。
 		if fn.Name.Name == "HttpStatus" && (fn.Recv != nil || path == "pkg/errx/http_status.go") {
 			continue
 		}
-		c := &checker{fset: fset, file: path, errors: map[string]bool{}, statuses: map[string]bool{}}
+		c := &checker{fset: fset, file: path, errors: map[string]bool{}, statuses: map[string]bool{}, carried: map[string]bool{}}
 		for _, field := range fn.Type.Params.List {
 			if id, ok := field.Type.(*ast.Ident); ok && id.Name == "error" {
 				for _, name := range field.Names {
@@ -125,8 +141,22 @@ func checkFile(fset *token.FileSet, path string, file *ast.File) []string {
 		// 简单赋值的闭包覆盖先查码再 switch、先取状态再写出的常见写法。
 		for pass := 0; pass < 8; pass++ {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
+				if declaration, ok := node.(*ast.ValueSpec); ok {
+					for index, value := range declaration.Values {
+						if index < len(declaration.Names) {
+							name := declaration.Names[index].Name
+							c.carried[name] = c.carried[name] || c.isCarried(value)
+							c.errors[name] = c.errors[name] || c.tainted(value)
+						}
+					}
+				}
 				if assignment, ok := node.(*ast.AssignStmt); ok {
 					for index, right := range assignment.Rhs {
+						if index < len(assignment.Lhs) {
+							if id, ok := assignment.Lhs[index].(*ast.Ident); ok && c.isCarried(right) {
+								c.carried[id.Name] = true
+							}
+						}
 						if index < len(assignment.Lhs) && c.tainted(right) && !carriedStatus(right) {
 							if id, ok := assignment.Lhs[index].(*ast.Ident); ok {
 								c.errors[id.Name] = true
@@ -148,7 +178,7 @@ func checkFile(fset *token.FileSet, path string, file *ast.File) []string {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if ret, ok := node.(*ast.ReturnStmt); ok {
 					for _, value := range ret.Results {
-						if !carriedStatus(value) {
+						if !c.isCarried(value) {
 							c.report(ret.Pos(), "错误状态辅助函数不得重建映射，请使用 Errx 状态")
 						}
 					}
@@ -196,6 +226,26 @@ func carriedStatus(expression ast.Expr) bool {
 	}
 	owner, ok := selector.X.(*ast.Ident)
 	return ok && owner.Name == "errx"
+}
+
+// isCarried 判断状态读取及其局部变量是否来自统一出口。
+//
+// 要做什么：
+// - 允许将公共状态查询结果保存到局部变量后交给标准 HTTP 框架。
+//
+// 具体怎么做：
+// - 识别直接查询及数据流收集的状态变量，不允许本地重新分类的赋值。
+//
+// 输出什么：
+// - 返回当前表达式是否携带统一读取的状态。
+func (c *checker) isCarried(expression ast.Expr) bool {
+	if carriedStatus(expression) {
+		return true
+	}
+	if id, ok := expression.(*ast.Ident); ok {
+		return c.carried[id.Name]
+	}
+	return false
 }
 
 // tainted 判断表达式是否取决于错误身份或查码结果。
@@ -251,8 +301,15 @@ func statusArgument(call *ast.CallExpr) ast.Expr {
 			}
 		}
 	}
-	if name, ok := call.Fun.(*ast.Ident); ok && len(call.Args) >= 3 {
-		if name.Name == "writeJSON" || name.Name == "respond" || name.Name == "writeErrorWithCode" || name.Name == "writeFailure" || name.Name == "writeError" {
+	name := ""
+	switch function := call.Fun.(type) {
+	case *ast.Ident:
+		name = function.Name
+	case *ast.SelectorExpr:
+		name = function.Sel.Name
+	}
+	if len(call.Args) >= 3 {
+		if name == "writeJSON" || name == "writeWebJSON" || name == "respond" || name == "writeErrorWithCode" || name == "writeFailure" || name == "writeError" || name == "write" || name == "writeRaw" {
 			value := call.Args[1]
 			if looksStatus(value) {
 				return value
@@ -313,7 +370,7 @@ func successfulStatus(value ast.Expr) bool {
 // - 拒绝错误到状态的重复决策以及状态冒充业务码。
 //
 // 具体怎么做：
-// - 递归检查错误分类控制块，允许直接读取公共状态；普通存在性判断不重新分类。
+// - 递归检查错误分类及存在性控制块，允许直接读取公共状态。
 //
 // 输出什么：
 // - 将不合规状态赋值、出口和错误正文登记为诊断。
@@ -328,10 +385,10 @@ func (c *checker) walk(node ast.Node, classified bool) {
 		ast.Inspect(current.Cond, func(child ast.Node) bool {
 			if binary, ok := child.(*ast.BinaryExpr); ok && (binary.Op == token.EQL || binary.Op == token.NEQ) {
 				if id, ok := binary.Y.(*ast.Ident); ok && id.Name == "nil" {
-					return false
+					return true
 				}
 				if id, ok := binary.X.(*ast.Ident); ok && id.Name == "nil" {
-					return false
+					return true
 				}
 			}
 			if id, ok := child.(*ast.Ident); ok && c.errors[id.Name] {
@@ -363,7 +420,7 @@ func (c *checker) walk(node ast.Node, classified bool) {
 				continue
 			}
 			value := current.Rhs[index]
-			if c.statuses[id.Name] && (classified || c.tainted(value)) && !carriedStatus(value) {
+			if c.statuses[id.Name] && (classified || c.tainted(value)) && !c.isCarried(value) {
 				c.report(current.Pos(), "禁止根据错误身份选择 HTTP status，请读取错误自带状态")
 			}
 		}
@@ -383,7 +440,7 @@ func (c *checker) walk(node ast.Node, classified bool) {
 				}
 			}
 		}
-		if value := statusArgument(current); value != nil && !carriedStatus(value) {
+		if value := statusArgument(current); value != nil && !c.isCarried(value) {
 			if c.tainted(value) || classified && looksStatus(value) && !successfulStatus(value) {
 				c.report(current.Pos(), "禁止根据错误分类驱动 HTTP 状态出口")
 			}
