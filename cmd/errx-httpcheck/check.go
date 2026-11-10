@@ -88,6 +88,11 @@ func checkFile(fset *token.FileSet, path string, file *ast.File) []string {
 		if !ok || fn.Body == nil {
 			continue
 		}
+		if fn.Name.Name == "WriteError" && len(fn.Type.Params.List) == 4 {
+			if first, ok := fn.Type.Params.List[0].Type.(*ast.SelectorExpr); ok && first.Sel.Name == "ResponseWriter" {
+				violations = append(violations, fmt.Sprintf("%s:%d: HTTP WriteError 不得声明宿主 status 参数", path, fset.Position(fn.Pos()).Line))
+			}
+		}
 		// 状态的真实 owner 是 Errx 查询和各错误本体的 HttpStatus 方法。
 		if fn.Name.Name == "HttpStatus" && (fn.Recv != nil || path == "pkg/errx/http_status.go") {
 			continue
@@ -366,6 +371,18 @@ func (c *checker) walk(node ast.Node, classified bool) {
 		if selector, ok := current.Fun.(*ast.SelectorExpr); ok && selector.Sel.Name == "WriteError" && len(current.Args) == 4 {
 			c.report(current.Pos(), "WriteError 不得接受宿主 status，请使用三参数入口")
 		}
+		if name, ok := current.Fun.(*ast.Ident); ok && len(current.Args) == 4 {
+			if name.Name == "WriteError" {
+				c.report(current.Pos(), "WriteError 不得接受宿主 status，请使用三参数入口")
+			}
+			if name.Name == "writeErrorWithCode" {
+				status, leftOK := current.Args[1].(*ast.Ident)
+				code, rightOK := current.Args[2].(*ast.Ident)
+				if leftOK && rightOK && status.Name == code.Name && looksStatus(status) {
+					c.report(current.Pos(), "HTTP status 不得同时作为业务 code 传入")
+				}
+			}
+		}
 		if value := statusArgument(current); value != nil && !carriedStatus(value) {
 			if c.tainted(value) || classified && looksStatus(value) && !successfulStatus(value) {
 				c.report(current.Pos(), "禁止根据错误分类驱动 HTTP 状态出口")
@@ -380,7 +397,7 @@ func (c *checker) walk(node ast.Node, classified bool) {
 			key = field.Name
 		}
 		_, literal := current.Value.(*ast.BasicLit)
-		if strings.EqualFold(key, "code") && !literal && looksStatus(current.Value) {
+		if strings.EqualFold(key, "code") && !literal && (looksStatus(current.Value) || carriedStatus(current.Value)) {
 			c.report(current.Pos(), "HTTP status 不得冒充业务 code")
 		}
 	}
