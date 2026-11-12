@@ -220,7 +220,7 @@ func CloseInvoice() error {
 ## CI Runner
 
 CI 统一使用组织 self-hosted runner `ccf-linux-01-kernel-docker`（Linux x64，runner group `Default`）。
-`runs-on: [self-hosted, Linux, X64, axion-kernel, image-builder, ccf, amd64]`；配置、环境要求与排队排查见 [项目群 CI Runner 合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/development/ci-runner.md)。
+`runs-on: [self-hosted, Linux, X64, axion-kernel, image-builder, ccf, amd64]`；配置、环境要求与排队排查见 [项目群 CI Runner 合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/engineering/ci/runner/runner-configuration.md)。
 
 ## 错误自带 HTTP 状态
 

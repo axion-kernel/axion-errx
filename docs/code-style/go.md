@@ -7,5 +7,5 @@
 
 文档注释使用中文，段落之间留空的 `//` 行。函数、方法及测试采用中文摘要、
 「要做什么／具体怎么做／输出什么」三节中文列表；类型和字段按需组织中文段落。
-格式以[项目群注释合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/engineering/testing/AGENTS.md#文档注释)为准。
+格式以[项目群注释合同](https://github.com/axion-kernel/axion-agent-docs/blob/main/engineering/testing/verification.md#文档注释)为准。
 统一门禁通过 Go AST 检查当前变更，包含仅修改注释的情况；没有 Git 基线时完整检查。
