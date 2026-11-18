@@ -15,6 +15,12 @@
 
 ## AI 易错勘误
 
+### 项目群公共勘误
+
+先维护所属设计与测试合同，再改实现。领域拥有规则和默认值，组合根注入依赖。慢初始化在全局锁外，发布时复核身份和代次。持久事件使用稳定强类型；压缩上下文不能作为完整历史。验收执行本仓门禁并记录证据，凭据与运行产物保持零跟踪。详见[项目群易错勘误](../axion-agent-docs/engineering/agent-errata.md)。
+
+Go 错误沿用项目群 Errx。稳定名称、数值码和状态由 owner 唯一注册，已有类型的原因链和数值码跨边界保留。响应只投影业务码与公开文案。涉及上游协议时由 provider adapter 归一化。详见[ErrorType 与传输合同](../axion-agent-docs/architecture/errors/error-contract.md#errortype-注册与使用)。
+
 - 这是一个共享基础库仓库，不是应用仓库；不要引入与 HTTP 运行时、数据库、前端调试器等无关的骨架。
 - 项目群统一 module 为 `github.com/axion-kernel/axion-errx`；不要重新引入旧 module 或改动已发布错误身份。
 - 对外共享 Go 包固定放在 `pkg/errx`；不要恢复旧目录或改成 `internal/errx`。
