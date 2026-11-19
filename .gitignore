@@ -145,3 +145,7 @@ $RECYCLE.BIN/
 .Trash-*/
 .nfs*
 .fuse_hidden*
+
+# Binaries from go build ./cmd/... in the repository root.
+/errx-httpcheck
+!/errx-httpcheck/
