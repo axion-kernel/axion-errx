@@ -193,6 +193,7 @@ func CloseInvoice() error {
 | `axion-cloud-v2` | `github.com/axion-box/axion-cloud-v2` | `2000~2999` |
 | `axion-agent-v2` | `github.com/axion-box/axion-agent-v2` | `3000~3999` |
 | `glenclaw-upgrade` | `github.com/axion-box/glenclaw-upgrade` | `4000~4999` |
+| `axion-agent-hindsight` | `github.com/axion-kernel/axion-agent-hindsight` | `5000~5019` |
 
 新增项目或调整范围时，必须先更新本表；已登记范围不得互相重叠，也不得占用共享层保留的 `1000~1999`。
 
