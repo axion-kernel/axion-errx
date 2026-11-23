@@ -15,6 +15,10 @@
 
 ## AI 易错勘误
 
+### API 请求与响应结构
+
+API 请求和响应的固定对象必须用 struct，优先复用现有类型，并禁止用 `map[string]any` 组装输出。详见[公共 API 类型规则](../axion-agent-docs/engineering/go/api-payloads.md)。
+
 ### 项目群公共勘误
 
 先维护所属设计与测试合同，再改实现。领域拥有规则和默认值，组合根注入依赖。慢初始化在全局锁外，发布时复核身份和代次。持久事件使用稳定强类型；压缩上下文不能作为完整历史。验收执行本仓门禁并记录证据，凭据与运行产物保持零跟踪。详见[项目群易错勘误](../axion-agent-docs/engineering/agent-errata.md)。
