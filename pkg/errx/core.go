@@ -57,4 +57,7 @@ var (
 
 	// ExecutionSkipped 表示上游明确要求跳过本次执行，不应作为暂时故障重试。
 	ExecutionSkipped = NewType("execution_skipped", 1017, 409)
+
+	// NoChange 表示操作正常完成且没有变更。
+	NoChange = NewType("no_change", 1018, 200)
 )

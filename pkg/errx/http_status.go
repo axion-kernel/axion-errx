@@ -1,6 +1,6 @@
 package errx
 
-// HttpStatus 返回错误类型声明的 HTTP 失败状态。
+// HttpStatus 返回类型声明的 HTTP 状态。
 //
 // 要做什么：
 // - 让类型和创建的错误共用所属仓声明的默认状态。
@@ -17,7 +17,7 @@ func (t *Type) HttpStatus() int {
 	return t.httpStatus
 }
 
-// HttpStatus 返回当前错误实例的 HTTP 失败状态。
+// HttpStatus 返回当前实例的 HTTP 状态。
 //
 // 要做什么：
 // - 让错误携带自己的传输状态，不依赖宿主查码。
@@ -37,7 +37,7 @@ func (e *Error) HttpStatus() int {
 	return e.typ.HttpStatus()
 }
 
-// HttpStatus 读取任意错误自身携带的 HTTP 失败状态。
+// HttpStatus 读取任意错误自身携带的 HTTP 状态。
 //
 // 要做什么：
 // - 为传输边界统一读取错误状态，支持标准包装与多原因错误。
@@ -47,7 +47,7 @@ func (e *Error) HttpStatus() int {
 // - 空值和不含 Errx 的普通错误回退 500，不采信其他错误的同名方法。
 //
 // 输出什么：
-// - 返回 400–599 范围内的状态，不读取消息、错误码或诊断载荷。
+// - 返回 200 或 400–599 范围内的状态，不读取消息、错误码或诊断载荷。
 func HttpStatus(err error) int {
 	found := FindIf(err, func(current error) bool {
 		_, ok := current.(*Error)
@@ -59,18 +59,18 @@ func HttpStatus(err error) int {
 	return found.(*Error).HttpStatus()
 }
 
-// validateHttpStatus 拒绝非法的 HTTP 失败状态。
+// validateHttpStatus 拒绝不受支持的 HTTP 状态。
 //
 // 要做什么：
-// - 防止错误定义意外产生成功响应或无效响应。
+// - 允许声明正常完成的 200 及 HTTP 失败状态。
 //
 // 具体怎么做：
-// - 检查状态是否处于 400–599 闭区间。
+// - 检查状态是否为 200 或处于 400–599 闭区间。
 //
 // 输出什么：
 // - 合法状态正常返回，非法状态触发 panic。
 func validateHttpStatus(status int) {
-	if status < 400 || status > 599 {
-		panic("errx: HTTP status must be between 400 and 599")
+	if status != 200 && (status < 400 || status > 599) {
+		panic("errx: HTTP status must be 200 or between 400 and 599")
 	}
 }

@@ -43,6 +43,7 @@ func TestCoreErrorCodes(t *testing.T) {
 		{name: "upstream_disconnected", typ: errx.UpstreamDisconnected, code: 1015},
 		{name: "upstream_quota_exhausted", typ: errx.UpstreamQuotaExhausted, code: 1016},
 		{name: "execution_skipped", typ: errx.ExecutionSkipped, code: 1017},
+		{name: "no_change", typ: errx.NoChange, code: 1018},
 	}
 
 	// 测试交互：逐个类型读取公开身份。
@@ -100,6 +101,7 @@ func TestCoreErrorsCrossMatchWithIsOfType(t *testing.T) {
 		{name: "upstream_disconnected", typ: errx.UpstreamDisconnected},
 		{name: "upstream_quota_exhausted", typ: errx.UpstreamQuotaExhausted},
 		{name: "execution_skipped", typ: errx.ExecutionSkipped},
+		{name: "no_change", typ: errx.NoChange},
 	}
 
 	// 测试交互：为每个来源构造错误，再遍历所有判别目标。

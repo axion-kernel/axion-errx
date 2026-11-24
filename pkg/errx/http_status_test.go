@@ -58,6 +58,7 @@ func TestSharedHttpStatus(t *testing.T) {
 		{errx.IllegalState, 409}, {errx.IllegalFormat, 400}, {errx.ExternalError, 502},
 		{errx.InitializationFailed, 500}, {errx.MethodNotAllowed, 405}, {errx.BadRequestBody, 400},
 		{errx.UpstreamDisconnected, 502}, {errx.UpstreamQuotaExhausted, 429}, {errx.ExecutionSkipped, 409},
+		{errx.NoChange, 200},
 	}
 	// 测试交互与验证答案：每个类型创建实例后核对所有读取入口。
 	for _, test := range cases {
@@ -85,6 +86,8 @@ func TestHttpStatusPreservesWrappingAndOwner(t *testing.T) {
 	legacy := errx.NewType("http_status_legacy_test", 991202)
 	remote := errx.ExternalError.NewWithOptions(errx.Options{Message: "safe", Cause: context.Canceled, HttpStatus: 429})
 	wrapped := errx.WrapError(fmt.Errorf("context: %w", remote), "more context")
+	noChange := errx.NoChange.New("state already current")
+	wrappedNoChange := errx.WrapError(fmt.Errorf("operation: %w", noChange), "completed")
 	// 测试交互：按实际产品组合方式构造原因树。
 	cases := []struct {
 		failure error
@@ -92,6 +95,7 @@ func TestHttpStatusPreservesWrappingAndOwner(t *testing.T) {
 	}{
 		{owner.New("timeout"), 504}, {legacy.New("unknown"), 500},
 		{wrapped, 429}, {errx.Forbidden.Wrap(remote, "denied"), 403},
+		{wrappedNoChange, 200},
 		{errx.InternalError.WrapPrivate(remote, "hidden"), 500},
 		{fmt.Errorf("wrapped: %w", statusFailure(418)), 500},
 		{errx.WrapError(statusFailure(418), "protocol"), 500},
@@ -111,13 +115,16 @@ func TestHttpStatusPreservesWrappingAndOwner(t *testing.T) {
 	if wrapped.Code() != remote.Code() || !errors.Is(wrapped, remote) || wrapped.HttpStatus() != 429 || (*errx.Type)(nil).HttpStatus() != 500 || new(errx.Type).HttpStatus() != 500 {
 		t.Fatal("wrapping changed identity, status or cause")
 	}
+	if wrappedNoChange.Type() != errx.NoChange || !errors.Is(wrappedNoChange, noChange) {
+		t.Fatal("wrapping changed NoChange identity or cause")
+	}
 	// 测试收尾：注册项随进程结束，无外部资源。
 }
 
 // TestHttpStatusRejectsInvalidDeclarations 验证非法状态在注册和构造时被拒绝。
 //
 // 要做什么：
-// - 防止错误产生成功状态或无效响应。
+// - 只允许已支持的完成状态与失败状态。
 //
 // 具体怎么做：
 // - 对越界状态及多个状态执行构造，捕获预期 panic。
@@ -131,7 +138,7 @@ func TestHttpStatusRejectsInvalidDeclarations(t *testing.T) {
 		func() { errx.NewType("invalid_status", 991203, 600) },
 		func() { errx.NewType("invalid_status", 991203, 0) },
 		func() { errx.NewType("invalid_status", 991203, 400, 500) },
-		func() { errx.ExternalError.NewWithOptions(errx.Options{HttpStatus: 200}) },
+		func() { errx.ExternalError.NewWithOptions(errx.Options{HttpStatus: 202}) },
 		func() { errx.ExternalError.NewWithOptions(errx.Options{HttpStatus: 600}) },
 	}
 	// 测试交互与验证答案：每个非法构造都必须触发拒绝。
@@ -145,7 +152,7 @@ func TestHttpStatusRejectsInvalidDeclarations(t *testing.T) {
 			create()
 		}()
 	}
-	for _, status := range []int{400, 599} {
+	for _, status := range []int{200, 400, 599} {
 		if got := errx.ExternalError.NewWithOptions(errx.Options{HttpStatus: status}).HttpStatus(); got != status {
 			t.Fatalf("boundary got=%d want=%d", got, status)
 		}

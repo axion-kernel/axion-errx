@@ -16,7 +16,7 @@ type Options struct {
 	// Payload 保存进程内原值身份，不自动序列化；其可变数据由调用方负责隔离。
 	Payload any
 
-	// HttpStatus 为当前实例声明 HTTP 失败状态，零值沿用错误类型的状态。
+	// HttpStatus 为当前实例声明 HTTP 状态，零值沿用类型的状态。
 	HttpStatus int
 }
 
